@@ -1,6 +1,7 @@
 
 export(create_db_table)
 export(create_db_partition_years)
+export(create_adt_metadata_table)
 export(add_adt_metadata_table)
 
 export(aws_parameters_json_minutes)
