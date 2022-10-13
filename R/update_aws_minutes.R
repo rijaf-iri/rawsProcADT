@@ -325,16 +325,17 @@ writeDB_aws_minutes <- function(conn, aws_data, coords_table){
     aws_coords <- as.list(aws_data[1, c('network', 'id')])
 
     ####
-    create_table_select(conn, 'aws_minutes', 'temp_aws_minutes')
-    DBI::dbWriteTable(conn, 'temp_aws_minutes', aws_data, overwrite = TRUE, row.names = FALSE)
+    temp_table <- paste0('temp_aws_minutes_', format(Sys.time(), '%Y%m%d%H%M%S'))
+    create_table_select(conn, 'aws_minutes', temp_table)
+    DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
 
     query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
     value_keys <- c('value', 'limit_check')
-    statement <- create_statement_upsert('aws_minutes', 'temp_aws_minutes', query_keys, value_keys)
+    statement <- create_statement_upsert('aws_minutes', temp_table, query_keys, value_keys)
 
     DBI::dbExecute(conn, statement$update)
     DBI::dbExecute(conn, statement$insert)
-    DBI::dbExecute(conn, "DROP TABLE IF EXISTS temp_aws_minutes")
+    DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
 
     ####
     query <- create_query_select(coords_table,

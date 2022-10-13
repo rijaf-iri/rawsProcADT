@@ -287,16 +287,17 @@ writeDB_aws_hourly <- function(conn, aws_data){
     aws_coords <- as.list(aws_data[1, c('network', 'id')])
 
     ####
-    create_table_select(conn, 'aws_hourly', 'temp_aws_hourly')
-    DBI::dbWriteTable(conn, 'temp_aws_hourly', aws_data, overwrite = TRUE, row.names = FALSE)
+    temp_table <- paste0('temp_aws_hourly_', format(Sys.time(), '%Y%m%d%H%M%S'))
+    create_table_select(conn, 'aws_hourly', temp_table)
+    DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
 
     query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
     value_keys <- c('value', 'cfrac', 'spatial_check')
-    statement <- create_statement_upsert('aws_hourly', 'temp_aws_hourly', query_keys, value_keys)
+    statement <- create_statement_upsert('aws_hourly', temp_table, query_keys, value_keys)
 
     DBI::dbExecute(conn, statement$update)
     DBI::dbExecute(conn, statement$insert)
-    DBI::dbExecute(conn, "DROP TABLE IF EXISTS temp_aws_hourly")
+    DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
 
     ####
     query <- create_query_select("aws_aggr_ts", c('hour_ts_start', 'hour_ts_end'),
