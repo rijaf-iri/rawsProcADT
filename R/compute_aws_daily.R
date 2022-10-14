@@ -291,7 +291,7 @@ writeDB_aws_daily <- function(conn, aws_data){
     # DBI::dbExecute(conn, statement$insert)
     # DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
 
-    DBI::dbWriteTable(conn, 'aws_daily', aws_data, overwrite = TRUE, row.names = FALSE)
+    DBI::dbWriteTable(conn, 'aws_daily', aws_data, append = TRUE, row.names = FALSE)
 
     ####
     query <- create_query_select("aws_aggr_ts", c('day_ts_start', 'day_ts_end'),

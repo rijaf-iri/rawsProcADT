@@ -299,7 +299,7 @@ writeDB_aws_hourly <- function(conn, aws_data){
     # DBI::dbExecute(conn, statement$insert)
     # DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
 
-    DBI::dbWriteTable(conn, 'aws_hourly', aws_data, overwrite = TRUE, row.names = FALSE)
+    DBI::dbWriteTable(conn, 'aws_hourly', aws_data, append = TRUE, row.names = FALSE)
 
     ####
     query <- create_query_select("aws_aggr_ts", c('hour_ts_start', 'hour_ts_end'),

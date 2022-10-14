@@ -13,8 +13,6 @@ readCoordsDB <- function(aws_dir){
         stop("Unable to connect to ADT database\n")
     }
 
-    dirJSON <- file.path(aws_dir, "AWS_DATA", "JSON")
-
     netFile <- file.path(dirJSON, "network_infos.json")
     netInfos <- jsonlite::read_json(netFile)
     net_seq <- names(netInfos)
