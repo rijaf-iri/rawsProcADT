@@ -279,17 +279,19 @@ writeDB_aws_daily <- function(conn, aws_data){
     aws_coords <- as.list(aws_data[1, c('network', 'id')])
 
     ####
-    temp_table <- paste0('temp_aws_daily_', format(Sys.time(), '%Y%m%d%H%M%S'))
-    create_table_select(conn, 'aws_daily', temp_table)
-    DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
+    # temp_table <- paste0('temp_aws_daily_', format(Sys.time(), '%Y%m%d%H%M%S'))
+    # create_table_select(conn, 'aws_daily', temp_table)
+    # DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
 
-    query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
-    value_keys <- c('value', 'cfrac', 'qc_check')
-    statement <- create_statement_upsert('aws_daily', temp_table, query_keys, value_keys)
+    # query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
+    # value_keys <- c('value', 'cfrac', 'qc_check')
+    # statement <- create_statement_upsert('aws_daily', temp_table, query_keys, value_keys)
 
-    DBI::dbExecute(conn, statement$update)
-    DBI::dbExecute(conn, statement$insert)
-    DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
+    # DBI::dbExecute(conn, statement$update)
+    # DBI::dbExecute(conn, statement$insert)
+    # DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
+
+    DBI::dbWriteTable(conn, 'aws_daily', aws_data, overwrite = TRUE, row.names = FALSE)
 
     ####
     query <- create_query_select("aws_aggr_ts", c('day_ts_start', 'day_ts_end'),
