@@ -213,6 +213,8 @@ populate_one_aws_minutes <- function(aws_dir, aws_net, aws_id,
             format.out.msg(paste(msg, '\n', ret), logPROC)
             next
         }
+
+        cat(aws_list[i], '\n')
     }
 
     return(0)
@@ -337,7 +339,7 @@ writeDB_aws_minutes <- function(conn, aws_data, coords_table){
     # DBI::dbExecute(conn, statement$insert)
     # DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
 
-    DBI::dbWriteTable(conn, 'aws_minutes', aws_data, overwrite = TRUE, row.names = FALSE)
+    DBI::dbWriteTable(conn, 'aws_minutes', aws_data, append = TRUE, row.names = FALSE)
 
     ####
     query <- create_query_select(coords_table,
