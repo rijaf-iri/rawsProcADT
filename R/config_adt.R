@@ -7,7 +7,7 @@
 #' @export
 
 create_AWS_DATA <- function(aws_dir){
-    config <- c('AUTH', 'CSV', 'JSON', 'GEOJSON', 'STATUS', 'LOG', 'SHP')
+    config <- c('AUTH', 'CSV', 'JSON', 'GEOJSON', 'STATUS', 'LOG', 'SHP', 'DATA/minutes')
     dirConfig <- file.path(aws_dir, "AWS_DATA", config)
 
     for(dr in dirConfig){
