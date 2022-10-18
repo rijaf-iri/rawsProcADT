@@ -55,3 +55,57 @@ get_datadb_range <- function(aws_dir){
 
     return(crds)
 }
+
+#' Populate the AWS time range for the metadata and 'aws_aggr_ts' tables .
+#'
+#' Populate the start and end date of each AWS network metadata tables and aws_aggr_ts table.
+#' 
+#' @param aws_dir full path to the directory containing the AWS_DATA folder.
+#' 
+#' @export
+
+reinit_table_crds_aws_aggr_ts <- function(aws_dir){
+    on.exit(DBI::dbDisconnect(conn))
+
+    conn <- connect.adt_db(aws_dir)
+    if(is.null(conn)){
+        stop("Unable to connect to ADT database\n")
+    }
+
+    netInfo <- DBI::dbReadTable(conn, "adt_network")
+
+    for(j in seq_along(netInfo$coords_table)){
+        awsCrd <- DBI::dbReadTable(conn, netInfo$coords_table[j])
+        for(s in seq_along(awsCrd$id)){
+            query_args <- list(network = netInfo$code[j], id = awsCrd$id[s])
+            funCol <- c("MIN(obs_time) as min", "MAX(obs_time) as max")
+            query <- create_query_select("aws_minutes", funCol, query_args)
+            qres <- DBI::dbGetQuery(conn, query)
+            if(is.na(qres$min) | is.na(qres$max)) next
+
+            query_args <- list(id = awsCrd$id[s])
+            update_cols <- list(startdate = qres$min, enddate = qres$max)
+            statement <- create_statement_update(netInfo$coords_table[j], query_args, update_cols)
+            DBI::dbExecute(conn, statement)
+
+            # # check if the aws already created
+            # query <- create_query_select("aws_aggr_ts", c('minute_ts_start', 'minute_ts_end'),
+            #                              list(network = j, id = awsCrd$id[s]))
+            # aws_range <- DBI::dbGetQuery(conn, query)
+
+            # if(nrow(aws_range) > 0){
+                # aws_coords <- list(network = j, id = awsCrd$id[s])
+                # update_cols <- list(minute_ts_start = qres$min, minute_ts_end = qres$max)
+                # statement <- create_statement_update("aws_aggr_ts", aws_coords, update_cols)
+                # DBI::dbExecute(conn, statement)
+            # }else{
+                values <- c(j, paste0("'", awsCrd$id[s], "'"), c(qres$min, qres$max))
+                col_names <- c('network', 'id', 'minute_ts_start', 'minute_ts_end')
+                statement <- create_statement_insert("aws_aggr_ts", col_names, values)
+                DBI::dbExecute(conn, statement)
+            # }
+        }
+    }
+
+    return(0)
+}

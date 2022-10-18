@@ -15,6 +15,7 @@ export(updateAWSStatus)
 export(initializeAWSStatus)
 export(get_datadb_range)
 export(get_datadb_timestep)
+export(reinit_table_crds_aws_aggr_ts)
 
 export(create_network_info)
 export(update_network_info)

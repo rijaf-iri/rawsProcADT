@@ -61,37 +61,6 @@ create_adt_metadata_table <- function(aws_dir){
 
     for(j in seq_along(netInfo$coords_table)){
         create_net_metadata_table(aws_dir, netInfo$coords_table[j])
-
-        # table_name <- netInfo$coords_table[j]
-        # aws_file <- paste0(table_name, ".csv")
-        # file_csv <- file.path(aws_dir, "AWS_DATA", "CSV", aws_file)
-        # meta <- utils::read.table(file_csv, sep = ",", na.strings = "", header = TRUE,
-        #                           stringsAsFactors = FALSE, quote = "\"")
-        # name_col <- names(meta)
-        # name_col0 <- name_col[6:length(name_col)]
-
-        # table_hd0 <- c('id', 'name', 'longitude', 'latitude', 'altitude')
-        # table_type0 <- c('VARCHAR(50) NOT NULL', 'VARCHAR(100)', 'REAL', 'REAL', 'REAL')
-
-        # table_hd <- c(table_hd0, name_col0)
-        # table_type <- c(table_type0, rep('VARCHAR(100)', length(name_col0)))
-
-        # table_hd <- c(table_hd, 'startdate', 'enddate')
-        # table_type <- c(table_type, 'BIGINT', 'BIGINT')
-        # meta$startdate <- NA
-        # meta$enddate <- NA
-
-        # colName <- as.list(paste(table_hd, table_type))
-        # db_table <- list(conn = conn, table_name = table_name)
-
-        # table_args <- c(db_table, colName)
-        # do.call(create_db_table, table_args)
-
-        # ###
-        # names(meta) <- table_hd
-        # meta[meta == ""] <- NA
-        # adtpars <- format_dataframe_dbtable(conn, meta, table_name)
-        # DBI::dbWriteTable(conn, table_name, adtpars, append = TRUE, row.names = FALSE)
     }
 
     return(0)
