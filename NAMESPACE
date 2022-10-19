@@ -4,6 +4,7 @@ export(create_db_partition_years)
 export(create_adt_metadata_table)
 export(add_adt_metadata_table)
 export(create_net_metadata_table)
+export(update_net_metadata_table)
 
 export(aws_parameters_json_minutes)
 export(get_aws_parameters_rds)

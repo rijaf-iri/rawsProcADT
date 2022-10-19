@@ -10,5 +10,5 @@ create_adt_metadata_table(aws_dir)
 \item{aws_dir}{full path to the directory containing the AWS_DATA folder.}
 }
 \description{
-Create and populate AWS coordinates and parameters tables from \code{adt_db}.
+Create and populate AWS coordinates tables for all AWS networks.
 }

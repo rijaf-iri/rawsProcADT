@@ -163,6 +163,7 @@ format_dataframe_dbtable <- function(conn, data_frame, table_name){
     type <- sapply(strsplit(tbl$Type, "\\("), '[[', 1)
     fun_format <- lapply(type, function(v){
         switch(v,
+              "text" = as.character,
               "varchar" = as.character,
               "double" = as.numeric,
               "int" = as.integer,

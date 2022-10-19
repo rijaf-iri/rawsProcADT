@@ -19,23 +19,8 @@ add_adt_metadata_table <- function(aws_dir, aws_file, dbTable){
     file_csv <- file.path(aws_dir, "AWS_DATA", "CSV", aws_file)
     meta <- utils::read.table(file_csv, sep = ",", na.strings = "", header = TRUE,
                               stringsAsFactors = FALSE, quote = "\"")
-    name_col <- names(meta)
-
-    tbl <- DBI::dbGetQuery(conn, paste('DESCRIBE', dbTable))
-    type <- sapply(strsplit(tbl$Type, "\\("), '[[', 1)
-    fun_format <- lapply(type, function(v){
-        switch(v,
-              "varchar" = as.character,
-              "double" = as.numeric,
-              "int" = as.integer,
-              "tinyint" = as.integer,
-              "bigint" = as.integer)
-    })
-
-    meta <- lapply(seq_along(fun_format), function(i) fun_format[[i]](meta[[i]]))
-    meta <- as.data.frame(meta)
-    names(meta) <- name_col
-
+    meta <- format_dataframe_dbtable(conn, meta, dbTable)
+    DBI::dbExecute(conn, paste("DELETE FROM", dbTable))
     DBI::dbWriteTable(conn, dbTable, meta, append = TRUE, row.names = FALSE)
 
     return(0)
@@ -43,7 +28,7 @@ add_adt_metadata_table <- function(aws_dir, aws_file, dbTable){
 
 #' Create AWS Metadata tables for all AWS networks.
 #'
-#' Create and populate AWS coordinates and parameters tables from \code{adt_db}.
+#' Create and populate AWS coordinates tables for all AWS networks.
 #' 
 #' @param aws_dir full path to the directory containing the AWS_DATA folder.
 #' 
@@ -68,7 +53,7 @@ create_adt_metadata_table <- function(aws_dir){
 
 #' Create AWS Metadata table for one AWS network.
 #'
-#' Create and populate AWS coordinates and parameters table.
+#' Create and populate AWS coordinates table for one AWS network.
 #' 
 #' @param aws_dir full path to the directory containing the AWS_DATA folder.
 #' @param table_name name of the table, must be the same name as defined in the table \code{adt_network}.
@@ -111,6 +96,42 @@ create_net_metadata_table <- function(aws_dir, table_name){
     names(meta) <- table_hd
     meta[meta == ""] <- NA
     adtpars <- format_dataframe_dbtable(conn, meta, table_name)
+    DBI::dbExecute(conn, paste("DELETE FROM", table_name))
+    DBI::dbWriteTable(conn, table_name, adtpars, append = TRUE, row.names = FALSE)
+
+    return(0)
+}
+
+#' Update AWS Metadata table for one AWS network.
+#'
+#' Update AWS coordinates table for one AWS network.
+#' 
+#' @param aws_dir full path to the directory containing the AWS_DATA folder.
+#' @param table_name name of the table, must be the same name as defined in the table \code{adt_network}.
+#' 
+#' @export
+
+update_net_metadata_table <- function(aws_dir, table_name){
+    on.exit(DBI::dbDisconnect(conn))
+
+    conn <- connect.adt_db(aws_dir)
+    if(is.null(conn)){
+        stop("Unable to connect to ADT database\n")
+    }
+
+    aws_file <- paste0(table_name, ".csv")
+    file_csv <- file.path(aws_dir, "AWS_DATA", "CSV", aws_file)
+    meta <- utils::read.table(file_csv, sep = ",", na.strings = "", header = TRUE,
+                              stringsAsFactors = FALSE, quote = "\"")
+    awsTab <- DBI::dbReadTable(conn, table_name)
+
+    iaws <- match(meta$id, awsTab$id)
+    trange <- awsTab[iaws, c('startdate', 'enddate'), drop = FALSE]
+
+    meta <- cbind(meta, trange)
+    meta[meta == ""] <- NA
+    adtpars <- format_dataframe_dbtable(conn, meta, table_name)
+    DBI::dbExecute(conn, paste("DELETE FROM", table_name))
     DBI::dbWriteTable(conn, table_name, adtpars, append = TRUE, row.names = FALSE)
 
     return(0)
