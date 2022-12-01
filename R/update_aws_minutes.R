@@ -68,7 +68,7 @@ update_aws_minutes <- function(aws_dir, start_time = "2015-01-01 00:00:00"){
             }
             time1 <- as.integer(Sys.time())
 
-            it <- (end >= time0) & (start <= time1)
+            it <- (end > time0) & (start <= time1)
             if(!any(it)) next
             aws_list <- aws_list[it]
 
@@ -214,7 +214,7 @@ populate_one_aws_minutes <- function(aws_dir, aws_net, aws_id,
             next
         }
 
-        cat(aws_list[i], '\n')
+        # cat(aws_list[i], '\n')
     }
 
     return(0)

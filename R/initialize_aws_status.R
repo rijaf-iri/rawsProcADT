@@ -63,8 +63,8 @@ initializeAWSStatus <- function(aws_dir){
 
     ###########
     format <- "%Y-%m-%d %H:%M"
-    startdate <- as.POSIXct(aws_coords$startdate, fromat = format, tz = tz)
-    enddate <- as.POSIXct(aws_coords$enddate, fromat = format, tz = tz)
+    startdate <- as.POSIXct(aws_coords$startdate, format = format, tz = tz)
+    enddate <- as.POSIXct(aws_coords$enddate, format = format, tz = tz)
 
     aws_coords$startdate <- format(startdate, "%Y-%m-%d %H:%M:%S")
     aws_coords$enddate <- format(enddate, "%Y-%m-%d %H:%M:%S")
