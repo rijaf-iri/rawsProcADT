@@ -214,7 +214,7 @@ populate_one_aws_minutes <- function(aws_dir, aws_net, aws_id,
             next
         }
 
-        # cat(aws_list[i], '\n')
+        ## cat(aws_list[i], '\n')
     }
 
     return(0)
