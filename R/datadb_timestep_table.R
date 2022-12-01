@@ -17,7 +17,8 @@ update_aws_timestep <- function(aws_dir){
 
     csvFile <- file.path(aws_dir, 'AWS_DATA', 'CSV', 'adt_aws_timesteps.csv')
     csv <- utils::read.table(csvFile, sep = ',', header = TRUE,
-                        stringsAsFactors = FALSE, quote = '\"')
+                             stringsAsFactors = FALSE, quote = '\"',
+                             fileEncoding = 'utf8')
     names(csv) <- c('code', 'network', 'id', 'name', 'timestep')
 
     create_db_table(conn, "aws_timestep",

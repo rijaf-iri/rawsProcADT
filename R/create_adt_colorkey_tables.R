@@ -28,7 +28,8 @@ create_adt_colorkey_table <- function(aws_dir, csv_file, table_name){
     parsFile <- file.path(aws_dir, 'AWS_DATA', 'CSV', csv_file)
     csv <- utils::read.table(parsFile, sep = ',', header = TRUE, 
                              fill = TRUE, comment.char = "",
-                             stringsAsFactors = FALSE, quote = '\"')
+                             stringsAsFactors = FALSE, quote = '\"',
+                             fileEncoding = 'utf8')
     csv[csv == ""] <- NA
 
     conn <- connect.adt_db(aws_dir)

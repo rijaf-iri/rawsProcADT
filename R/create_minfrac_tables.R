@@ -23,7 +23,8 @@ create_minfrac_hourly <- function(aws_dir){
 
     minFile <- file.path(aws_dir, "AWS_DATA", "CSV", "adt_minfrac_hourly.csv")
     csv <- utils::read.table(minFile, sep = ",", header = TRUE,
-                                stringsAsFactors = FALSE, quote = "\"")
+                             stringsAsFactors = FALSE, quote = "\"",
+                             fileEncoding = 'utf8')
     names(csv) <- c('var_name', 'var_unit', 'var_code', 'min_frac')
 
     conn <- connect.adt_db(aws_dir)
@@ -68,7 +69,8 @@ create_minfrac_daily <- function(aws_dir){
 
     minFile <- file.path(aws_dir, "AWS_DATA", "CSV", "adt_minfrac_daily.csv")
     csv <- utils::read.table(minFile, sep = ",", header = TRUE,
-                                stringsAsFactors = FALSE, quote = "\"")
+                             stringsAsFactors = FALSE, quote = "\"",
+                             fileEncoding = 'utf8')
     names(csv) <- c('var_name', 'var_unit', 'var_code', 'min_frac')
 
     conn <- connect.adt_db(aws_dir)
@@ -114,7 +116,8 @@ create_minfrac_aggregate <- function(aws_dir){
 
     minFile <- file.path(aws_dir, "AWS_DATA", "CSV", "adt_minfrac_aggregate.csv")
     csv <- utils::read.table(minFile, sep = ",", header = TRUE,
-                                stringsAsFactors = FALSE, quote = "\"")
+                             stringsAsFactors = FALSE, quote = "\"",
+                             fileEncoding = 'utf8')
     names(csv) <- c('var_name', 'var_unit', 'var_code', 'min_frac_pentad',
                     'min_frac_dekadal', 'min_frac_monthly')
 

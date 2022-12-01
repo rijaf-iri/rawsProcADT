@@ -23,7 +23,8 @@ create_network_info <- function(aws_dir){
 
     netFile <- file.path(aws_dir, 'AWS_DATA', 'CSV', 'adt_network_table.csv')
     csv <- utils::read.table(netFile, sep = ',', header = TRUE,
-                        stringsAsFactors = FALSE, quote = '\"')
+                             stringsAsFactors = FALSE, quote = '\"',
+                             fileEncoding = 'utf8')
 
     don <- vector(mode = "list", length = nrow(csv))
     for(j in seq(nrow(csv))){

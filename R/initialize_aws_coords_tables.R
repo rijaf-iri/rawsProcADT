@@ -18,7 +18,8 @@ add_adt_metadata_table <- function(aws_dir, aws_file, dbTable){
 
     file_csv <- file.path(aws_dir, "AWS_DATA", "CSV", aws_file)
     meta <- utils::read.table(file_csv, sep = ",", na.strings = "", header = TRUE,
-                              stringsAsFactors = FALSE, quote = "\"")
+                              stringsAsFactors = FALSE, quote = "\"",
+                              fileEncoding = 'utf8')
     meta <- format_dataframe_dbtable(conn, meta, dbTable)
     DBI::dbExecute(conn, paste("DELETE FROM", dbTable))
     DBI::dbWriteTable(conn, dbTable, meta, append = TRUE, row.names = FALSE)
@@ -71,7 +72,8 @@ create_net_metadata_table <- function(aws_dir, table_name){
     aws_file <- paste0(table_name, ".csv")
     file_csv <- file.path(aws_dir, "AWS_DATA", "CSV", aws_file)
     meta <- utils::read.table(file_csv, sep = ",", na.strings = "", header = TRUE,
-                              stringsAsFactors = FALSE, quote = "\"")
+                              stringsAsFactors = FALSE, quote = "\"",
+                              fileEncoding = 'utf8')
     name_col <- names(meta)
     name_col0 <- name_col[6:length(name_col)]
 
@@ -122,7 +124,8 @@ update_net_metadata_table <- function(aws_dir, table_name){
     aws_file <- paste0(table_name, ".csv")
     file_csv <- file.path(aws_dir, "AWS_DATA", "CSV", aws_file)
     meta <- utils::read.table(file_csv, sep = ",", na.strings = "", header = TRUE,
-                              stringsAsFactors = FALSE, quote = "\"")
+                              stringsAsFactors = FALSE, quote = "\"",
+                              fileEncoding = 'utf8')
     awsTab <- DBI::dbReadTable(conn, table_name)
 
     iaws <- match(meta$id, awsTab$id)

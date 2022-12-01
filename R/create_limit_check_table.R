@@ -15,7 +15,8 @@ update_adt_limit_check_table <- function(aws_dir){
 
     csvFile <- file.path(aws_dir, 'AWS_DATA', 'CSV', 'adt_limit_check_table.csv')
     csv <- utils::read.table(csvFile, sep = ',', header = TRUE,
-                        stringsAsFactors = FALSE, quote = '\"')
+                        stringsAsFactors = FALSE, quote = '\"',
+                        fileEncoding = 'utf8')
 
     stn_crds <- list('code TINYINT NOT NULL',
                      'network VARCHAR(50) NOT NULL',
@@ -48,7 +49,8 @@ create_adt_limit_check_table <- function(aws_dir){
 
     csvFile <- file.path(aws_dir, 'AWS_DATA', 'CSV', 'adt_default_limit_check.csv')
     csv <- utils::read.table(csvFile, sep = ',', header = TRUE,
-                        stringsAsFactors = FALSE, quote = '\"')
+                        stringsAsFactors = FALSE, quote = '\"',
+                        fileEncoding = 'utf8')
 
     crds <- readCoordsDB(aws_dir)
     crds <- crds[, c('network_code', 'network', 'id', 'name', 'longitude', 'latitude')]

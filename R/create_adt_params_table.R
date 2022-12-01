@@ -23,7 +23,8 @@ create_adt_params_table <- function(aws_dir){
 
     parsFile <- file.path(aws_dir, 'AWS_DATA', 'CSV', 'adt_parameters_table.csv')
     csv <- utils::read.table(parsFile, sep = ',', header = TRUE,
-                        stringsAsFactors = FALSE, quote = '\"')
+                        stringsAsFactors = FALSE, quote = '\"',
+                        fileEncoding = 'utf8')
 
     conn <- connect.adt_db(aws_dir)
     if(is.null(conn)){
@@ -70,7 +71,8 @@ create_adt_stats_table <- function(aws_dir){
 
     parsFile <- file.path(aws_dir, 'AWS_DATA', 'CSV', 'adt_statistics_table.csv')
     csv <- utils::read.table(parsFile, sep = ',', header = TRUE,
-                        stringsAsFactors = FALSE, quote = '\"')
+                        stringsAsFactors = FALSE, quote = '\"',
+                        fileEncoding = 'utf8')
 
     conn <- connect.adt_db(aws_dir)
     if(is.null(conn)){
