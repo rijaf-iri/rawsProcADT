@@ -4,7 +4,14 @@
 \alias{compute_one_aws_hourly}
 \title{Compute hourly data for one AWS.}
 \usage{
-compute_one_aws_hourly(aws_dir, aws_net, aws_id, start_date, end_date)
+compute_one_aws_hourly(
+  aws_dir,
+  aws_net,
+  aws_id,
+  start_date,
+  end_date,
+  first_writing = TRUE
+)
 }
 \arguments{
 \item{aws_dir}{full path to the folder that will contain the folder AWS_DATA.}
@@ -16,6 +23,8 @@ compute_one_aws_hourly(aws_dir, aws_net, aws_id, start_date, end_date)
 \item{start_date}{the start date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".}
 
 \item{end_date}{the end date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".}
+
+\item{first_writing}{if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.}
 }
 \description{
 Compute hourly data for one AWS from minutes time series and write the data into ADT database.

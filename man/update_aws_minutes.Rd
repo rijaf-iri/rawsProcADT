@@ -4,12 +4,18 @@
 \alias{update_aws_minutes}
 \title{Update AWS minutes data.}
 \usage{
-update_aws_minutes(aws_dir, start_time = "2015-01-01 00:00:00")
+update_aws_minutes(
+  aws_dir,
+  start_time = "2015-01-01 00:00:00",
+  first_writing = FALSE
+)
 }
 \arguments{
 \item{aws_dir}{full path to the folder that will contain the folder AWS_DATA.}
 
 \item{start_time}{for new station, the start time of the data.}
+
+\item{first_writing}{if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.}
 }
 \description{
 Updates AWS minutes data from minutes time series and write the data into ADT database.

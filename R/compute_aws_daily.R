@@ -6,10 +6,14 @@
 #' @param aws_dir full path to the folder that will contain the folder AWS_DATA.
 #' @param daily_rain_obs_hour observation hour for daily rainfall data. 
 #' @param start_time for new station, the start time the computation will be started.
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
-update_aws_daily <- function(aws_dir, daily_rain_obs_hour = 8, start_time = "2015-01-01 00:00:00"){
+update_aws_daily <- function(aws_dir, daily_rain_obs_hour = 8,
+                             start_time = "2015-01-01 00:00:00",
+                             first_writing = FALSE)
+{
     on.exit(DBI::dbDisconnect(conn))
 
     dirJSON <- file.path(aws_dir, "AWS_DATA", "JSON")
@@ -93,7 +97,7 @@ update_aws_daily <- function(aws_dir, daily_rain_obs_hour = 8, start_time = "201
 
         if(is.null(aws_data)) next
 
-        ret <- try(writeDB_aws_daily(conn, aws_data), silent = TRUE)
+        ret <- try(writeDB_aws_daily(conn, aws_data, first_writing), silent = TRUE)
         if(inherits(ret, "try-error")){ 
             msg <- paste(aws_msg, "Unable to write data into the database.")
             format.out.msg(paste(msg, '\n', ret), logPROC)
@@ -114,11 +118,14 @@ update_aws_daily <- function(aws_dir, daily_rain_obs_hour = 8, start_time = "201
 #' @param start_date the start date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".
 #' @param end_date the end date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".
 #' @param daily_rain_obs_hour observation hour for daily rainfall data. 
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
-compute_one_aws_daily <- function(aws_dir, aws_net, aws_id, start_date,
-                                  end_date, daily_rain_obs_hour = 8)
+compute_one_aws_daily <- function(aws_dir, aws_net, aws_id,
+                                  start_date, end_date,
+                                  daily_rain_obs_hour = 8,
+                                  first_writing = TRUE)
 {
     on.exit(DBI::dbDisconnect(conn))
 
@@ -180,7 +187,7 @@ compute_one_aws_daily <- function(aws_dir, aws_net, aws_id, start_date,
         return(NULL)
     }
 
-    ret <- try(writeDB_aws_daily(conn, aws_data), silent = TRUE)
+    ret <- try(writeDB_aws_daily(conn, aws_data, first_writing), silent = TRUE)
     if(inherits(ret, "try-error")){ 
         msg <- paste(aws_msg, "Unable to write data into the database.")
         format.out.msg(paste(msg, '\n', ret), logPROC)
@@ -198,10 +205,14 @@ compute_one_aws_daily <- function(aws_dir, aws_net, aws_id, start_date,
 #' @param end_date the end date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".
 #' @param aws_dir full path to the folder that will contain the folder AWS_DATA.
 #' @param daily_rain_obs_hour observation hour for daily rainfall data. 
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
-compute_aws_daily <- function(aws_dir, start_date, end_date, daily_rain_obs_hour = 8){
+compute_aws_daily <- function(aws_dir, start_date, end_date,
+                              daily_rain_obs_hour = 8,
+                              first_writing = TRUE)
+{
     on.exit(DBI::dbDisconnect(conn))
 
     dirJSON <- file.path(aws_dir, "AWS_DATA", "JSON")
@@ -262,7 +273,7 @@ compute_aws_daily <- function(aws_dir, start_date, end_date, daily_rain_obs_hour
 
         if(is.null(aws_data)) next
 
-        ret <- try(writeDB_aws_daily(conn, aws_data), silent = TRUE)
+        ret <- try(writeDB_aws_daily(conn, aws_data, first_writing), silent = TRUE)
         if(inherits(ret, "try-error")){ 
             msg <- paste(aws_msg, "Unable to write data into the database.")
             format.out.msg(paste(msg, '\n', ret), logPROC)
@@ -273,25 +284,27 @@ compute_aws_daily <- function(aws_dir, start_date, end_date, daily_rain_obs_hour
     return(0)
 }
 
-writeDB_aws_daily <- function(conn, aws_data){
+writeDB_aws_daily <- function(conn, aws_data, first_writing){
     aws_data <- format_dataframe_dbtable(conn, aws_data, 'aws_daily')
     rangeT <- as.integer(range(aws_data$obs_time))
     aws_coords <- as.list(aws_data[1, c('network', 'id')])
 
     ####
-    # temp_table <- paste0('temp_aws_daily_', format(Sys.time(), '%Y%m%d%H%M%S'))
-    # create_table_select(conn, 'aws_daily', temp_table)
-    # DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
+    if(first_writing){
+        DBI::dbWriteTable(conn, 'aws_daily', aws_data, append = TRUE, row.names = FALSE)
+    }else{
+        temp_table <- paste0('temp_aws_daily_', format(Sys.time(), '%Y%m%d%H%M%S'))
+        create_table_select(conn, 'aws_daily', temp_table)
+        DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
 
-    # query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
-    # value_keys <- c('value', 'cfrac', 'qc_check')
-    # statement <- create_statement_upsert('aws_daily', temp_table, query_keys, value_keys)
+        query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
+        value_keys <- c('value', 'cfrac', 'qc_check')
+        statement <- create_statement_upsert('aws_daily', temp_table, query_keys, value_keys)
 
-    # DBI::dbExecute(conn, statement$update)
-    # DBI::dbExecute(conn, statement$insert)
-    # DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
-
-    DBI::dbWriteTable(conn, 'aws_daily', aws_data, append = TRUE, row.names = FALSE)
+        DBI::dbExecute(conn, statement$update)
+        DBI::dbExecute(conn, statement$insert)
+        DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
+    }
 
     ####
     query <- create_query_select("aws_aggr_ts", c('day_ts_start', 'day_ts_end'),

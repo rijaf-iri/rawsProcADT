@@ -4,10 +4,11 @@
 #' 
 #' @param aws_dir full path to the folder that will contain the folder AWS_DATA.
 #' @param start_time for new station, the start time of the data.
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
-update_aws_minutes <- function(aws_dir, start_time = "2015-01-01 00:00:00"){
+update_aws_minutes <- function(aws_dir, start_time = "2015-01-01 00:00:00", first_writing = FALSE){
     on.exit(DBI::dbDisconnect(conn))
 
     dirJSON <- file.path(aws_dir, "AWS_DATA", "JSON")
@@ -79,7 +80,7 @@ update_aws_minutes <- function(aws_dir, start_time = "2015-01-01 00:00:00"){
                 aws_data <- aws_data[ix, , drop = FALSE]
                 if(nrow(aws_data) == 0) next
 
-                ret <- try(writeDB_aws_minutes(conn, aws_data, netInfo$coords_table[j]), silent = TRUE)
+                ret <- try(writeDB_aws_minutes(conn, aws_data, netInfo$coords_table[j], first_writing), silent = TRUE)
                 if(inherits(ret, "try-error")){
                     aws_msg <- paste("AWS:", awsCrd$id[s], "NET:", netInfo$code[j], "|")
                     msg <- paste(aws_msg, "Unable to write data into the database.")
@@ -106,12 +107,14 @@ update_aws_minutes <- function(aws_dir, start_time = "2015-01-01 00:00:00"){
 #' @param data_dir if the data is stored in folder outside the DATA folder in AWS_DATA,\cr
 #' full path to the folder that will contain the folder of the AWS network.\cr
 #' The name of the AWS network folder must be the same as the names in the column \code{name_dir} of the file \code{CSV/adt_network_table.csv}.
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
 populate_one_aws_minutes <- function(aws_dir, aws_net, aws_id,
                                      start_date, end_date,
-                                     data_dir = NULL)
+                                     data_dir = NULL,
+                                     first_writing = TRUE)
 {
     on.exit(DBI::dbDisconnect(conn))
 
@@ -207,7 +210,7 @@ populate_one_aws_minutes <- function(aws_dir, aws_net, aws_id,
         aws_data <- aws_data[ix, , drop = FALSE]
         if(nrow(aws_data) == 0) next
 
-        ret <- try(writeDB_aws_minutes(conn, aws_data, netInfo$coords_table[aws_net]), silent = TRUE)
+        ret <- try(writeDB_aws_minutes(conn, aws_data, netInfo$coords_table[aws_net], first_writing), silent = TRUE)
         if(inherits(ret, "try-error")){
             msg <- paste(aws_msg, "Unable to write data into the database.")
             format.out.msg(paste(msg, '\n', ret), logPROC)
@@ -230,10 +233,13 @@ populate_one_aws_minutes <- function(aws_dir, aws_net, aws_id,
 #' @param data_dir if the data is stored in folder outside the DATA folder in AWS_DATA,\cr
 #' full path to the folder that will contain the folder of the AWS network.\cr
 #' The name of the AWS network folder must be the same as the names in the column \code{name_dir} of the file \code{CSV/adt_network_table.csv}.
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
-populate_aws_minutes <- function(aws_dir, start_date, end_date, data_dir = NULL){
+populate_aws_minutes <- function(aws_dir, start_date, end_date,
+                                 data_dir = NULL, first_writing = TRUE)
+{
     on.exit(DBI::dbDisconnect(conn))
 
     dirJSON <- file.path(aws_dir, "AWS_DATA", "JSON")
@@ -307,7 +313,7 @@ populate_aws_minutes <- function(aws_dir, start_date, end_date, data_dir = NULL)
                 aws_data <- aws_data[ix, , drop = FALSE]
                 if(nrow(aws_data) == 0) next
 
-                ret <- try(writeDB_aws_minutes(conn, aws_data, netInfo$coords_table[j]), silent = TRUE)
+                ret <- try(writeDB_aws_minutes(conn, aws_data, netInfo$coords_table[j], first_writing), silent = TRUE)
                 if(inherits(ret, "try-error")){
                     aws_msg <- paste("AWS:", aws, "NET:", netInfo$code[j], "|")
                     msg <- paste(aws_msg, "Unable to write data into the database.")
@@ -321,25 +327,27 @@ populate_aws_minutes <- function(aws_dir, start_date, end_date, data_dir = NULL)
     return(0)
 }
 
-writeDB_aws_minutes <- function(conn, aws_data, coords_table){
+writeDB_aws_minutes <- function(conn, aws_data, coords_table, first_writing){
     aws_data <- format_dataframe_dbtable(conn, aws_data, 'aws_minutes')
     rangeT <- as.integer(range(aws_data$obs_time))
     aws_coords <- as.list(aws_data[1, c('network', 'id')])
 
     ####
-    # temp_table <- paste0('temp_aws_minutes_', format(Sys.time(), '%Y%m%d%H%M%S'))
-    # create_table_select(conn, 'aws_minutes', temp_table)
-    # DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
+    if(first_writing){
+        DBI::dbWriteTable(conn, 'aws_minutes', aws_data, append = TRUE, row.names = FALSE)
+    }else{
+        temp_table <- paste0('temp_aws_minutes_', format(Sys.time(), '%Y%m%d%H%M%S'))
+        create_table_select(conn, 'aws_minutes', temp_table)
+        DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
 
-    # query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
-    # value_keys <- c('value', 'limit_check')
-    # statement <- create_statement_upsert('aws_minutes', temp_table, query_keys, value_keys)
+        query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
+        value_keys <- c('value', 'limit_check')
+        statement <- create_statement_upsert('aws_minutes', temp_table, query_keys, value_keys)
 
-    # DBI::dbExecute(conn, statement$update)
-    # DBI::dbExecute(conn, statement$insert)
-    # DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
-
-    DBI::dbWriteTable(conn, 'aws_minutes', aws_data, append = TRUE, row.names = FALSE)
+        DBI::dbExecute(conn, statement$update)
+        DBI::dbExecute(conn, statement$insert)
+        DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
+    }
 
     ####
     query <- create_query_select(coords_table,

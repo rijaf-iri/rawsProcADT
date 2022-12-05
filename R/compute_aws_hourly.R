@@ -4,10 +4,11 @@
 #' 
 #' @param aws_dir full path to the folder that will contain the folder AWS_DATA.
 #' @param start_time for new station, the start time the computation will be started.
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
-update_aws_hourly <- function(aws_dir, start_time = "2015-01-01 00:00:00"){
+update_aws_hourly <- function(aws_dir, start_time = "2015-01-01 00:00:00", first_writing = FALSE){
     on.exit(DBI::dbDisconnect(conn))
 
     dirJSON <- file.path(aws_dir, "AWS_DATA", "JSON")
@@ -61,7 +62,8 @@ update_aws_hourly <- function(aws_dir, start_time = "2015-01-01 00:00:00"){
         }
 
         it <- dataRange$network == aws_coords$code & dataRange$id == aws_coords$id
-        time0 <- dataRange$hour_ts_end[it]
+        ## take previous hour, in case there is no complete obs
+        time0 <- dataRange$hour_ts_end[it] - 3599
         use_start_time <- FALSE
         if(length(time0) == 0){
             use_start_time <- TRUE
@@ -84,7 +86,7 @@ update_aws_hourly <- function(aws_dir, start_time = "2015-01-01 00:00:00"){
 
         if(is.null(aws_data)) next
 
-        ret <- try(writeDB_aws_hourly(conn, aws_data), silent = TRUE)
+        ret <- try(writeDB_aws_hourly(conn, aws_data, first_writing), silent = TRUE)
         if(inherits(ret, "try-error")){ 
             msg <- paste(aws_msg, "Unable to write data into the database.")
             format.out.msg(paste(msg, '\n', ret), logPROC)
@@ -104,10 +106,14 @@ update_aws_hourly <- function(aws_dir, start_time = "2015-01-01 00:00:00"){
 #' @param aws_id the ID of the AWS.
 #' @param start_date the start date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".
 #' @param end_date the end date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
-compute_one_aws_hourly <- function(aws_dir, aws_net, aws_id, start_date, end_date){
+compute_one_aws_hourly <- function(aws_dir, aws_net, aws_id,
+                                   start_date, end_date,
+                                   first_writing = TRUE)
+{
     on.exit(DBI::dbDisconnect(conn))
 
     dirJSON <- file.path(aws_dir, "AWS_DATA", "JSON")
@@ -184,7 +190,7 @@ compute_one_aws_hourly <- function(aws_dir, aws_net, aws_id, start_date, end_dat
         return(NULL)
     }
 
-    ret <- try(writeDB_aws_hourly(conn, aws_data), silent = TRUE)
+    ret <- try(writeDB_aws_hourly(conn, aws_data, first_writing), silent = TRUE)
     if(inherits(ret, "try-error")){ 
         msg <- paste(aws_msg, "Unable to write data into the database.")
         format.out.msg(paste(msg, '\n', ret), logPROC)
@@ -201,10 +207,13 @@ compute_one_aws_hourly <- function(aws_dir, aws_net, aws_id, start_date, end_dat
 #' @param start_date the start date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".
 #' @param end_date the end date of the time series to be computed, in the form "YYYY-mm-dd HH:MM:SS".
 #' @param aws_dir full path to the folder that will contain the folder AWS_DATA.
+#' @param first_writing if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.
 #' 
 #' @export
 
-compute_aws_hourly <- function(aws_dir, start_date, end_date){
+compute_aws_hourly <- function(aws_dir, start_date, end_date,
+                               first_writing = TRUE)
+{
     on.exit(DBI::dbDisconnect(conn))
 
     dirJSON <- file.path(aws_dir, "AWS_DATA", "JSON")
@@ -270,7 +279,7 @@ compute_aws_hourly <- function(aws_dir, start_date, end_date){
 
         if(is.null(aws_data)) next
 
-        ret <- try(writeDB_aws_hourly(conn, aws_data), silent = TRUE)
+        ret <- try(writeDB_aws_hourly(conn, aws_data, first_writing), silent = TRUE)
         if(inherits(ret, "try-error")){ 
             msg <- paste(aws_msg, "Unable to write data into the database.")
             format.out.msg(paste(msg, '\n', ret), logPROC)
@@ -281,25 +290,27 @@ compute_aws_hourly <- function(aws_dir, start_date, end_date){
     return(0)
 }
 
-writeDB_aws_hourly <- function(conn, aws_data){
+writeDB_aws_hourly <- function(conn, aws_data, first_writing){
     aws_data <- format_dataframe_dbtable(conn, aws_data, 'aws_hourly')
     rangeT <- as.integer(range(aws_data$obs_time))
     aws_coords <- as.list(aws_data[1, c('network', 'id')])
 
     ####
-    # temp_table <- paste0('temp_aws_hourly_', format(Sys.time(), '%Y%m%d%H%M%S'))
-    # create_table_select(conn, 'aws_hourly', temp_table)
-    # DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
+    if(first_writing){
+        DBI::dbWriteTable(conn, 'aws_hourly', aws_data, append = TRUE, row.names = FALSE)
+    }else{
+        temp_table <- paste0('temp_aws_hourly_', format(Sys.time(), '%Y%m%d%H%M%S'))
+        create_table_select(conn, 'aws_hourly', temp_table)
+        DBI::dbWriteTable(conn, temp_table, aws_data, overwrite = TRUE, row.names = FALSE)
 
-    # query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
-    # value_keys <- c('value', 'cfrac', 'spatial_check')
-    # statement <- create_statement_upsert('aws_hourly', temp_table, query_keys, value_keys)
+        query_keys <- c('network', 'id', 'height', 'var_code', 'stat_code', 'obs_time')
+        value_keys <- c('value', 'cfrac', 'spatial_check')
+        statement <- create_statement_upsert('aws_hourly', temp_table, query_keys, value_keys)
 
-    # DBI::dbExecute(conn, statement$update)
-    # DBI::dbExecute(conn, statement$insert)
-    # DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
-
-    DBI::dbWriteTable(conn, 'aws_hourly', aws_data, append = TRUE, row.names = FALSE)
+        DBI::dbExecute(conn, statement$update)
+        DBI::dbExecute(conn, statement$insert)
+        DBI::dbExecute(conn, paste("DROP TABLE IF EXISTS", temp_table))
+    }
 
     ####
     query <- create_query_select("aws_aggr_ts", c('hour_ts_start', 'hour_ts_end'),
@@ -409,6 +420,7 @@ compute_hourly_1var <- function(qvar, minFrac, timestep, tz){
     all_stat <- unique(qvar$stat_code)
 
     if(any(obs_var %in% (9:12))){
+        # do nothing if direction only
         if(length(obs_var) == 2){
             if(all(obs_var %in% c(9, 12))){
                 return(NULL)
@@ -557,14 +569,18 @@ compute_hourly_1var <- function(qvar, minFrac, timestep, tz){
         })
     }else{
         if(all(0:1 %in% all_stat)){
+            # take average value
             all_stat <- all_stat[all_stat != 0]
+            qvar <- qvar[qvar$stat_code != 0, , drop = FALSE]
         }else if(0 %in% all_stat){
+            # take inst value
             all_stat[all_stat == 0] <- 1
+            qvar$stat_code[qvar$stat_code == 0] <- 1
         }else{
             all_stat <- all_stat
         }
 
-        ## remove avg 1, min 2, max 3 for precip 5
+        ## todo: remove avg 1, min 2, max 3 for precip 5
 
         min_frac <- minFrac$min_frac[minFrac$var_code == obs_var]
         dat_var <- lapply(all_stat, function(s){

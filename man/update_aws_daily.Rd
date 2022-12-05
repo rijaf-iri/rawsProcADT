@@ -7,7 +7,8 @@
 update_aws_daily(
   aws_dir,
   daily_rain_obs_hour = 8,
-  start_time = "2015-01-01 00:00:00"
+  start_time = "2015-01-01 00:00:00",
+  first_writing = FALSE
 )
 }
 \arguments{
@@ -16,6 +17,8 @@ update_aws_daily(
 \item{daily_rain_obs_hour}{observation hour for daily rainfall data.}
 
 \item{start_time}{for new station, the start time the computation will be started.}
+
+\item{first_writing}{if \code{TRUE} write the data to the database for the first time, \code{FALSE} update existing table.}
 }
 \description{
 Compute AWS daily data from hourly time series and write the data into ADT database.
