@@ -389,6 +389,7 @@ compute_hourly_1aws <- function(conn, aws_coords, aws_pars,
     }
 
     dat_var <- lapply(unique(aws_pars$read), function(i){
+        cat(i, '\n')
         tpars <- aws_pars[aws_pars$read == i, , drop = FALSE]
         query_args <- list(network = aws_coords$code, id = aws_coords$id,
                            height = unique(tpars$height),
@@ -535,6 +536,9 @@ compute_hourly_1var <- function(qvar, minFrac, timestep, tz){
 
             ina <- avail_frac >= min_frac
             odaty <- as.numeric(odaty[ina])
+
+            if(length(odaty) == 0) return(NULL)
+
             avail_frac <- avail_frac[ina]
             out_dat <- lapply(index[ina], function(iv) xval$value[iv])
 
@@ -558,26 +562,33 @@ compute_hourly_1var <- function(qvar, minFrac, timestep, tz){
                  time = odaty, data = out_dat, frac = avail_frac)
         })
 
-        VHS$var_code[VHS$var_code == 11] <- 10
-        VHS$var_code[VHS$var_code == 12] <- 9
-        VHS$stat_code[VHS$stat_code == 9] <- 1
-        VHS$stat_code[VHS$stat_code == 5] <- 3
+        inull <- sapply(dat_var, is.null)
+        if(all(inull)){
+            data_out <- list(NULL)
+        }else{
+            dat_var <- dat_var[!inull]
 
-        wnd_hgt <- get_ff_height(VHS, 9, 10)
+            VHS$var_code[VHS$var_code == 11] <- 10
+            VHS$var_code[VHS$var_code == 12] <- 9
+            VHS$stat_code[VHS$stat_code == 9] <- 1
+            VHS$stat_code[VHS$stat_code == 5] <- 3
 
-        data_out <- lapply(seq(nrow(wnd_hgt)), function(h){
-            ihf <- VHS$var_code == 10 & VHS$height == wnd_hgt$ff_h[h]
-            ihd <- VHS$var_code == 9 & VHS$height == wnd_hgt$dd_h[h]
-            vhs_f <- VHS[ihf, , drop = FALSE]
-            vhs_d <- VHS[ihd, , drop = FALSE]
+            wnd_hgt <- get_ff_height(VHS, 9, 10)
 
-            xout <- qvar[1, var_out, drop = FALSE]
-            out <- compute_wind_height(dat_var, VHS, vhs_f, vhs_d, xout)
-            out$value <- round(out$value, 4)
-            out$cfrac <- round(out$cfrac, 2)
+            data_out <- lapply(seq(nrow(wnd_hgt)), function(h){
+                ihf <- VHS$var_code == 10 & VHS$height == wnd_hgt$ff_h[h]
+                ihd <- VHS$var_code == 9 & VHS$height == wnd_hgt$dd_h[h]
+                vhs_f <- VHS[ihf, , drop = FALSE]
+                vhs_d <- VHS[ihd, , drop = FALSE]
 
-            return(out)
-        })
+                xout <- qvar[1, var_out, drop = FALSE]
+                out <- compute_wind_height(dat_var, VHS, vhs_f, vhs_d, xout)
+                out$value <- round(out$value, 4)
+                out$cfrac <- round(out$cfrac, 2)
+
+                return(out)
+            })
+        }
     }else{
         if(all(0:1 %in% all_stat)){
             # take average value
