@@ -71,8 +71,11 @@ update_aws_hourly <- function(aws_dir, start_time = "2015-01-01 00:00:00", first
             if(is.na(time0)) use_start_time <- TRUE
         }
         if(use_start_time){
-            time0 <- as.POSIXct(start_time, tz = tz)
-            time0 <- as.integer(time0)
+            time0 <- as.POSIXlt(as.POSIXct(start_time, tz = tz))
+            time0$hour[] <- 00
+            time0$min[] <- 00
+            time0$sec[] <- 01
+            time0 <- as.numeric(time0)
         }
         time1 <- as.integer(Sys.time())
 
@@ -121,7 +124,11 @@ compute_one_aws_hourly <- function(aws_dir, aws_net, aws_id,
     initInfos <- jsonlite::read_json(initFile)
     tz <- initInfos$timeZone
 
-    time0 <- as.POSIXct(start_date, tz = tz)
+    time0 <- as.POSIXlt(as.POSIXct(start_date, tz = tz))
+    time0$hour[] <- 00
+    time0$min[] <- 00
+    time0$sec[] <- 01
+
     time1 <- as.POSIXct(end_date, tz = tz)
     year0 <- as.integer(format(time0, '%Y'))
     year1 <- as.integer(format(time1, '%Y'))
@@ -221,7 +228,11 @@ compute_aws_hourly <- function(aws_dir, start_date, end_date,
     initInfos <- jsonlite::read_json(initFile)
     tz <- initInfos$timeZone
 
-    time0 <- as.POSIXct(start_date, tz = tz)
+    time0 <- as.POSIXlt(as.POSIXct(start_date, tz = tz))
+    time0$hour[] <- 00
+    time0$min[] <- 00
+    time0$sec[] <- 01
+
     time1 <- as.POSIXct(end_date, tz = tz)
     year0 <- as.integer(format(time0, '%Y'))
     year1 <- as.integer(format(time1, '%Y'))

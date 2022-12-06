@@ -76,14 +76,17 @@ update_aws_daily <- function(aws_dir, daily_rain_obs_hour = 8,
                 time0 <- as.POSIXlt(as.POSIXct(time0, tz = tz))
                 time0$hour[] <- 00
                 time0$min[] <- 00
-                time0$sec[] <- 00
+                time0$sec[] <- 01
                 time0 <- as.numeric(time0)
             }
         }
 
         if(use_start_time){
-            time0 <- as.POSIXct(start_time, tz = tz)
-            time0 <- as.integer(time0)
+            time0 <- as.POSIXlt(as.POSIXct(start_time, tz = tz))
+            time0$hour[] <- 00
+            time0$min[] <- 00
+            time0$sec[] <- 01
+            time0 <- as.numeric(time0)
         }
         time1 <- as.integer(Sys.time())
 
@@ -134,11 +137,15 @@ compute_one_aws_daily <- function(aws_dir, aws_net, aws_id,
     initInfos <- jsonlite::read_json(initFile)
     tz <- initInfos$timeZone
 
-    time0 <- as.POSIXct(start_date, tz = tz)
+    time0 <- as.POSIXlt(as.POSIXct(start_date, tz = tz))
+    time0$hour[] <- 00
+    time0$min[] <- 00
+    time0$sec[] <- 01
+
     time1 <- as.POSIXct(end_date, tz = tz)
     year0 <- as.integer(format(time0, '%Y'))
     year1 <- as.integer(format(time1, '%Y'))
-    time0 <- as.integer(time0)
+    time0 <- as.numeric(time0)
     time1 <- as.integer(time1)
 
     ###
@@ -220,11 +227,15 @@ compute_aws_daily <- function(aws_dir, start_date, end_date,
     initInfos <- jsonlite::read_json(initFile)
     tz <- initInfos$timeZone
 
-    time0 <- as.POSIXct(start_date, tz = tz)
+    time0 <- as.POSIXlt(as.POSIXct(start_date, tz = tz))
+    time0$hour[] <- 00
+    time0$min[] <- 00
+    time0$sec[] <- 01
+
     time1 <- as.POSIXct(end_date, tz = tz)
     year0 <- as.integer(format(time0, '%Y'))
     year1 <- as.integer(format(time1, '%Y'))
-    time0 <- as.integer(time0)
+    time0 <- as.numeric(time0)
     time1 <- as.integer(time1)
 
     ###
@@ -373,6 +384,9 @@ compute_daily_1aws <- function(conn, aws_pars, time0, time1,
 
     dat_var <- lapply(unique(aws_pars$read), function(i){
         tpars <- aws_pars[aws_pars$read == i, , drop = FALSE]
+        if(tpars$var_code[1] == 5){
+            time0 <- time0 + daily_rain_obs_hour * 3600
+        }
         query_args <- list(network = tpars$network_code[1],
                            id = tpars$id[1],
                            height = unique(tpars$height),
