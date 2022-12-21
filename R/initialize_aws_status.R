@@ -203,8 +203,7 @@ get_status_percentage <- function(time_obs, time_ts){
     ##index at end
     it <- time_obs - 1
     it <- split(seq_along(it), format(it, '%Y%m%d%H'))
-    tth <- names(it)
-    tth <- as.POSIXct(tth, tz = "UTC", format = "%Y%m%d%H")
+    tth <- as.POSIXct(names(it), format = "%Y%m%d%H")
     tth <- format(tth + 3600, "%Y%m%d%H")
     names(it) <- tth
 
