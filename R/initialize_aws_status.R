@@ -197,8 +197,17 @@ get_status_percentage <- function(time_obs, time_ts){
     timestep <- names(which.max(sapply(df, length)))
     timestep <- as.numeric(timestep)
 
-    ##
-    it <- split(seq_along(time_obs), format(time_obs, '%Y%m%d%H'))
+    ##index at start
+    # it <- split(seq_along(time_obs), format(time_obs, '%Y%m%d%H'))
+
+    ##index at end
+    it <- time_obs - 1
+    it <- split(seq_along(it), format(it, '%Y%m%d%H'))
+    tth <- names(it)
+    tth <- as.POSIXct(tth, tz = "UTC", format = "%Y%m%d%H")
+    tth <- format(tth + 3600, "%Y%m%d%H")
+    names(it) <- tth
+
     nl <- sapply(it, function(v){
             round(100*length(v)/(60/timestep), 1)
     })

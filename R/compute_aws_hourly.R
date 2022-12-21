@@ -389,7 +389,6 @@ compute_hourly_1aws <- function(conn, aws_coords, aws_pars,
     }
 
     dat_var <- lapply(unique(aws_pars$read), function(i){
-        cat(i, '\n')
         tpars <- aws_pars[aws_pars$read == i, , drop = FALSE]
         query_args <- list(network = aws_coords$code, id = aws_coords$id,
                            height = unique(tpars$height),
